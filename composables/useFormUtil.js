@@ -2,22 +2,22 @@ const pattern = {
   email:
     /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
   phone: /^09[0-9]{8}$/,
-  superCoint: /^([1-9]\d*|[0]{1,1})$/, //含0的正整數
+  superCoin: /^([1-9]\d*|[0]{1,1})$/, //含0的正整數
 };
 
 export const useFormUtil = () => {
   //表單檢查共用方法
   const ruleRequired = (v) => !!v || "必填欄位";
-  const ruleEmail = (v) => pattern.email.test(v) || "Email格式不正確";
+  const ruleEmail = (v) => !v ||pattern.email.test(v) || "Email格式不正確";
   const rulePassLen = (v) =>
     (!!v && v.length >= 8) || "密碼必須包含至少 8 個字元";
-  const rulePhone = (v) => pattern.phone.test(v) || "請輸入有效的手機號碼";
+  const rulePhone = (v) => !v ||pattern.phone.test(v) || "請輸入有效的手機號碼";
   const ruleConfirmPassword = (v, password) =>
     v === password || "確認密碼必須和密碼相同";
   const ruleAddress = (v) =>
     //(!!v && v.length > 2 && v.indexOf("號") != -1) || "地址填寫不完整";
     (!!v && v.length > 0) || "地址填寫不完整";
-  const ruleSuperCoint = (v) => pattern.superCoint.test(v) || "金額輸入不正確";
+  const ruleSuperCoin = (v) => !v || pattern.superCoin.test(v) || "金額輸入不正確";
   const validateFormResult = async function (form) {
     let result = false;
     if (!form) return result;
@@ -54,26 +54,24 @@ export const useFormUtil = () => {
         counter: _counter[0],
         hint: _replace(_hint, _counter[0]),
         rule: [
-          ruleRequired,
-          (v) => (!!v && v.length <= 10) || _replace(_error, _counter[0]),
+          (v) => !v || v.length <= 10|| _replace(_error, _counter[0]),
         ],
       },
       nickname: {
         counter: _counter[1],
         hint: _replace(_hint, _counter[1]),
         rule: [
-          ruleRequired,
-          (v) =>
-            (!!v && v.length <= _counter[1]) || _replace(_error, _counter[1]),
+          //ruleRequired,
+          (v) => !v || v.length <= _counter[1] || _replace(_error, _counter[1]),
         ],
       },
       address: {
         counter: _counter[2],
         hint: _replace(_hint, _counter[2]),
         rule: [
-          ruleRequired,
+          //ruleRequired,
           (v) =>
-            (!!v && v.length <= _counter[2]) || _replace(_error, _counter[2]),
+          !v || v.length <= _counter[2] || _replace(_error, _counter[2]),
           ruleAddress,
         ],
       },
@@ -89,8 +87,7 @@ export const useFormUtil = () => {
         hint: _replace(_hint, _counter[1]),
         rule: [
           ruleRequired,
-          (v) =>
-            (!!v && v.length <= _counter[1]) || _replace(_error, _counter[1]),
+          (v) => !v || v.length <= _counter[1] || _replace(_error, _counter[1]),
         ],
       },
       taskDescription: {
@@ -112,7 +109,7 @@ export const useFormUtil = () => {
     rulePhone,
     ruleConfirmPassword,
     ruleAddress,
-    ruleSuperCoint,
+    ruleSuperCoin,
     validateFormResult,
     formRules,
   };
