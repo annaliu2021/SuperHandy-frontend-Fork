@@ -2,7 +2,7 @@
     <v-overlay v-model="loading"></v-overlay>
     <v-sheet class="pa-10 h-100" color="primary-lighten">
         <v-sheet max-width="1200" color="transparent" class="mx-auto">
-            <h1 class="mb-4 sp-text-2xl sp-font-bold">發布任務</h1>
+            <h1 class="mb-4 sp-text-2xl sp-font-bold">刊登任務</h1>
             <v-card class="mb-4 py-4 px-6" rounded="lg" elevation="0">
                 <h2 class="po-title"><span>任務內容</span>
 
@@ -87,7 +87,7 @@
                                     class='sp-mb-4 sp-w-full md:sp-mb-0 md:sp-w-auto' :disabled="loading"
                                     :loading="draftBtnloading">儲存為草稿</v-btn>
                                 <v-btn type='button' color="v-purple" class='sp-mb-4 sp-w-full md:sp-mb-0 md:sp-w-auto'
-                                    :disabled="loading" @click="openFeeDialog">立即刊登費用計算</v-btn>
+                                    :disabled="loading" @click="openFeeDialog">計算刊登費用</v-btn>
                             </div>
                         </div>
                     </div>
@@ -104,11 +104,14 @@
             <v-card-text>
                 {{ dialogMessage }}
             </v-card-text>
-            <v-card-actions v-if="dialogIsShowSuccessBtn" class="mt-2 justify-center">
+            <v-card-actions v-if="dialogShowSuccessBtn" class="mt-2 justify-center">
                 <v-btn color="primary me-2" @click="dialogIsOpen = false">繼續刊登</v-btn>
                 <NuxtLink :to="siteConfig.linkPaths.tasks.to">
                     <v-btn color="primary">前往任務管理</v-btn>
                 </NuxtLink>
+            </v-card-actions>
+            <v-card-actions v-else-if="dialogShowGoIndex" class="mt-2">
+                <v-btn color="error me-2 " @click="navigateTo(siteConfig.linkPaths.home.to)" block>前往首頁</v-btn>
             </v-card-actions>
             <v-card-actions v-else class="mt-2">
                 <v-btn color="primary me-2 " @click="dialogIsOpen = false" block>關閉</v-btn>
@@ -156,15 +159,15 @@
                                         </tr>
                                         <tr class="sp-h-10">
                                             <td class="sp-text-v-gray-dark">折抵幫手幣</td>
-                                            <td class="sp-text-end"> - {{ helperCoinCost }}點</td>
+                                            <td class="sp-text-end"> - {{ helperCoinConfirm }}點</td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </td>
                         </tr>
-                        <tr class="sp-bg-v-gray-light sp-h-12">
+                        <tr class="bg-v-gray-bg sp-h-12">
                             <td class="sp-font-bold pl-2">總金額</td>
-                            <td class="sp-font-bold sp-text-v-orange sp-text-end sp-text-xl pe-2">{{ total }}點</td>
+                            <td class="sp-font-bold text-v-orange sp-text-end sp-text-xl pe-2">{{ total }}點</td>
                         </tr>
                         <tr v-if="total === 0" class="sp-border-b sp-h-20">
                             <td class="sp-text-v-orange">
@@ -183,7 +186,7 @@
                             </td>
                             <td class="sp-text-end">
                                 <v-form @submit.prevent='submit'>
-                                    <v-btn color="v-purple" id="publish" type="submit" :loading="publishBtnloading"
+                                    <v-btn color="v-purple" id="published" type="submit" :loading="publishBtnloading"
                                         :disabled="publishBtnDisable">確認刊登</v-btn>
                                 </v-form>
                             </td>
@@ -213,15 +216,17 @@ import { postDraft, postPublish } from '@/services/apis/postTask';
 import { getAccountPoints } from '@/services/apis/point';
 const { checkRespStatus } = useHttp();
 const { logInfo, logError } = useLog();
-const { confirmBox } = useAlert()
 const _work = '刊登任務'
-// const { vueApp } = useNuxtApp()
+let descriptionTemplateList = []
+
+
+
 
 // - loading -
 const loading = ref(false);
 const draftBtnloading = ref(false);
 const publishBtnloading = ref(false);
-function setLoading({
+function openLoading({
     overlay,
     draftBtn,
     publishBtn
@@ -236,30 +241,66 @@ function closeLoading() {
     publishBtnloading.value = false
 }
 
+
+
 // - 訊息彈出視窗 -
-const dialogHeaderColor = {
+const dialogTypeOption = {
     info: 'primary',
     error: 'error'
 }
 const dialogType = ref('')
 const dialogIsOpen = ref(false)
 const dialogMessage = ref('')
-const dialogIsShowSuccessBtn = ref(false)
-function setPostTaskDialog({
-    isOpen,
+const dialogShowSuccessBtn = ref(false)
+const dialogShowGoIndex = ref(false)
+function openMessageDialog({
+    type,
     message,
-    isShowSuccessBtn,
-    HeaderColor,
+    successBtn,
+    gotoIndexBtn
 }) {
-    dialogIsOpen.value = isOpen
-    dialogMessage.value = message
-    dialogIsShowSuccessBtn.value = isShowSuccessBtn
-    dialogType.value = !HeaderColor ? dialogHeaderColor.info : HeaderColor
+
+    const _options = {
+        _type: type ?? dialogTypeOption.error,
+        _message: message ?? '發生意外錯誤',
+        _button: {
+            success: successBtn ?? false,
+            gotoIndex: gotoIndexBtn ?? false,
+        }
+    }
+
+    dialogIsOpen.value = true
+    dialogType.value = _options._type
+    dialogMessage.value = _options._message
+    dialogShowSuccessBtn.value = _options._button.success
+    dialogShowGoIndex.value = _options._button.gotoIndex
+
 }
+function openErrorDialog({
+    message,
+    gotoIndexBtn
+}) {
 
+    dialogIsOpen.value = true
+    dialogType.value = dialogTypeOption.error
+    dialogShowSuccessBtn.value = false
+    dialogMessage.value = message ?? '發生意外錯誤'
+    dialogShowGoIndex.value = gotoIndexBtn ?? false
 
-// - 費用彈出視窗 -
-const feeDialogIsOpen = ref(false)
+}
+function openInfoDialog({
+    message,
+    successBtn,
+    gotoIndexBtn
+}) {
+
+    dialogIsOpen.value = true
+    dialogType.value = dialogTypeOption.info
+    dialogShowSuccessBtn.value = successBtn ?? false
+    dialogMessage.value = message ?? '發生意外錯誤'
+    dialogShowGoIndex.value = gotoIndexBtn ?? false
+
+}
 
 
 
@@ -281,41 +322,59 @@ const taskTrans = ref({
     superCoin: 0,
     helperCoin: 0
 })
+
+
+
+
+// - 刊登費用計算視窗 -
+const feeDialogIsOpen = ref(false)
+
+// 打開費用視窗
+const openFeeDialog = async (event) => {
+    logInfo(_work, 'openFeeDialog')
+    const result = await validatePostTaskForm(siteConfig.taskStatus.published)
+    if (result) {
+        feeDialogIsOpen.value = true
+    }
+}
+
+// 取得曝光方案的點數
 const exposurePlanCost = computed(() => {
     const planCost = exposurePlans.value?.find(item => item.title === exposurePlan.value)
     return planCost.price
 })
+
+// 計算可折抵的幫手幣金額
 const helperCoinEstimate = computed(() => {
     const helperCoin = taskTrans.value.helperCoin
     const planCost = exposurePlans.value?.find(item => item.title === exposurePlan.value)
-    console.log(helperCoin, 'helperCoin')
-    console.log(planCost.price, 'planCost')
     if (helperCoin && planCost) {
         return helperCoin >= planCost.price ? planCost.price : helperCoin
     }
     return 0
 })
-const helperCoinCost = ref(0)
+
+// 確認要折抵的幫手幣金額
+const helperCoinConfirm = ref(0)
 function calculateHelperCoin(event) {
     //console.log(event, 'calculateHelperCoin')
     if (event) {
-        helperCoinCost.value = helperCoinEstimate.value
+        helperCoinConfirm.value = helperCoinEstimate.value
     } else {
-        helperCoinCost.value = 0
+        helperCoinConfirm.value = 0
     }
 }
+
+// 計算本次花費總金額
 const total = computed(() => {
-    let _total = 0
-    // _total = 超人幣-曝光費用-任務薪水+折抵幫手幣
-    const all = taskTrans.value.superCoin
-    const fee_plan = exposurePlanCost.value
-    const fee_salary = salary.value
-    const fee_helperCoin = helperCoinCost.value
-    _total = all - fee_plan - fee_salary + fee_helperCoin
-    return _total
+    //  本次花費總金額 = 超人幣-曝光費用-任務薪水+折抵幫手幣
+    return (exposurePlanCost.value + salary.value - helperCoinConfirm.value)
 })
 
+
+// 是否勾選 "我已詳閱點數付款通知"
 const publishBtnDisable = ref(true);
+
 
 
 // - 表單驗證 -
@@ -352,7 +411,7 @@ const validatePostTaskForm = async (status) => {
         case siteConfig.taskStatus.draft:
             rules.value = _draftRule
             break;
-        case siteConfig.taskStatus.publish:
+        case siteConfig.taskStatus.published:
             rules.value = _publishRule
             break;
         default:
@@ -377,11 +436,8 @@ const validatePostTaskForm = async (status) => {
     //         behavior: 'smooth'
     //     })
     // }
-    setPostTaskDialog({
-        isOpen: true,
+    openErrorDialog({
         message: '表單驗證還沒有完成喔!',
-        isShowSuccessBtn: false,
-        HeaderColor: dialogHeaderColor.error
     })
     return false;
 }
@@ -397,12 +453,12 @@ const postFormData = async (status, data) => {
         case siteConfig.taskStatus.draft:
             logInfo(_work, 'draft data', data)
             return await postDraft(data);
-        case siteConfig.taskStatus.publish:
+        case siteConfig.taskStatus.published:
             data.taskTrans = {
                 superCoin: taskTrans.value.superCoin,
-                helperCoin: helperCoinCost.value
+                helperCoin: helperCoinConfirm.value
             }
-            logInfo(_work, 'publish data', data)
+            logInfo(_work, 'published data', data)
             return await postPublish(data);
         default:
             break;
@@ -412,10 +468,10 @@ const submit = async (event) => {
 
     // 1. 開啟loading & disable btns
     const _submitter = event.submitter.id
-    setLoading({
+    openLoading({
         overlay: true,
         draftBtn: _submitter === siteConfig.taskStatus.draft,
-        publishBtn: _submitter === siteConfig.taskStatus.publish,
+        publishBtn: _submitter === siteConfig.taskStatus.published,
     })
     logInfo(_work, 'submitter', _submitter)
 
@@ -430,7 +486,7 @@ const submit = async (event) => {
     //3. 更新資料
     //4. 關閉loading & reset form
     let _message = ''
-    let _dialogType = ''
+    let _dialogType = dialogTypeOption.info
     let _isShowSuccessBtn = false
     try {
 
@@ -458,32 +514,25 @@ const submit = async (event) => {
             resetForm()
             _isShowSuccessBtn = true
         } else {
-            _dialogType = dialogHeaderColor.error
+            _dialogType = dialogTypeOption.error
         }
         _message = response.message
 
     } catch (error) {
 
         _message = '刊登任務失敗'
-        _dialogType = dialogHeaderColor.error
+        _dialogType = dialogTypeOption.error
         logError(_work, { error });
 
     } finally {
 
         closeLoading()
-        setPostTaskDialog({
-            isOpen: true,
+        openMessageDialog({
+            type: _dialogType,
             message: _message,
-            isShowSuccessBtn: _isShowSuccessBtn,
-            HeaderColor: _dialogType
+            successBtn: _isShowSuccessBtn
         })
 
-    }
-}
-const openFeeDialog = async (event) => {
-    logInfo(_work, 'openFeeDialog')
-    if (await validatePostTaskForm(siteConfig.taskStatus.publish)) {
-        feeDialogIsOpen.value = true
     }
 }
 
@@ -492,49 +541,56 @@ const openFeeDialog = async (event) => {
 // - 取得任務類別 & 曝光方案  & 會員的超人幣和幫手幣-
 const exposurePlans = ref([])
 const taskCategories = ref([])
+
 function getAllData() {
     Promise.all([
         getExposurePlan(),
         getCategories(),
         getAccountPoints()
     ]).then(result => {
-        //console.log(result[0].data, 'result')
+        //console.log(result, 'result')
+        //必須先檢查status是否="success",否則顯示後端給的錯誤訊息
+        result.forEach(item => {
+            if (!checkRespStatus(item)) {
+                throw item.message
+            }
+        })
+
         exposurePlans.value = result[0].data
         taskCategories.value = result[1].data
         taskTrans.value = result[2].data
+
+        // 建立任務說明的樣板清單
+        descriptionTemplateList = result[1]?.data?.map(item => item.template)
+        logInfo(_work, '任務說明的樣板清單數量', descriptionTemplateList.length);
+
     }).catch(error => {
         logError('取得初始資料', error);
-        setPostTaskDialog({
-            isOpen: true,
-            message: '取得初始資料發生異常',
-            isShowSuccessBtn: true,
-            HeaderColor: dialogHeaderColor.error
+        openErrorDialog({
+            message: error ?? '取得初始資料發生意外錯誤',
+            gotoIndexBtn: true
         })
     })
 }
 getAllData()
 
 
-// - 顯示幫手幣 -
-watch(() => taskTrans.helperCoin, (nV, oV) => {
-    const planValue = exposurePlan.value
-    const planObj = exposurePlans.value?.find((item) => item.name === planValue)
-    console.log(planValue, 'planValue')
-    console.log(planObj, 'planObj')
-})
-
 
 // - 選擇服務類別帶出任務說明 -
 watch(category, (nV, oV) => {
-    const newObj = taskCategories.value?.find((item) => item.name === nV)
-    const oldObj = taskCategories.value?.find((item) => item.name === oV)
-    // 1. 如果任務說明是空的，就直接帶入樣板
+    // 動作是清空就離開
+    if (!nV) {
+        return;
+    }
+    // 如果任務說明是空的，就直接帶入樣板
+    const newObj = taskCategories.value?.find(item => item.name === nV)
     if (newObj && newObj.template && !description.value) {
         description.value = newObj.template
         return;
     }
-    // 2. 如果任務說明已有資料，且跟樣板一樣才清空
-    if (oldObj && description.value && (description.value == oldObj.template)) {
+    // 只要任務說明是樣板，就可以被替換
+    const index = descriptionTemplateList.findIndex(item => item === description.value)
+    if (index >= 0) {
         description.value = newObj.template
         return;
     }
