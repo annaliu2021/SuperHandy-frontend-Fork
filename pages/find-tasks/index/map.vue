@@ -142,11 +142,14 @@ const getPosition = async () => {
       var latitude = position.coords.latitude;
       var longitude = position.coords.longitude;
       _storeFindTasks.mapCenter = [latitude, longitude];
+      centerUpdated();
     });
-    await getData();
     setTimeout(() => {
       _storeFindTasks.loading = false;
     }, 3000);
+    setTimeout(() => {
+      getData();
+    }, 1000);
   } else {
     console.log("Geolocation is not supported by this browser.");
     _storeFindTasks.mapCenter = [25.034436016196786, 121.56407163196346];
