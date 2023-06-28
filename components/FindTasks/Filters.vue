@@ -143,7 +143,6 @@
       >
       <v-btn @click="submitFilters" color="v-purple" rounded="lg">套用</v-btn>
     </div>
-    <!-- {{ _storeFindTasks.filterData }} -->
   </div>
 </template>
 
@@ -175,7 +174,6 @@ watch(
 );
 const fetchServices = async () => {
   let res = await getCategories();
-  // console.log({ res });
   servicesItems.value = res.data.reduce((acc, cur) => {
     acc.push(cur.name);
     return acc;

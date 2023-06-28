@@ -12,11 +12,6 @@
             :src="props.avatar ? props.avatar : '/images/sp_icon.png'"
             class="sp-w-full sp-h-full sp-object-cover"
           />
-          <!-- -----Test------ -->
-          <!-- <v-img
-            src="https://source.unsplash.com/random/600x600/?person"
-            class="sp-w-full"
-          ></v-img> -->
         </div>
         <div class="sp-flex-1 sp-flex-shrink-0">
           <div class="sp-text-h5 sp-text-slate-800 sp-my-2 sp-ml-1">
@@ -91,12 +86,8 @@
   } from "@/services/apis/tasks";
   import { storeFullOverlay } from "~/stores/storeFullOverlay";
   const _storeFullOverlay = storeFullOverlay();
-  // import {storeAuth} from "@/stores/storeAuth"
   import { storeChatBox } from "@/stores/storeChatBox";
-  // const _storeAuth = storeAuth()
-  const _storeChatBox = storeChatBox();
 
-  // const role = ref("幫手");
   const props = defineProps({
     avatar: String,
     completedTasks: Number,
@@ -108,7 +99,6 @@
     helperId: String,
   });
   const tasksChooseHelper = async function () {
-    //when detail watch value, overlay will close
     _storeFullOverlay.open();
     let res = await postTasksManagementHelper(props.taskId, props.helperId);
     if (!res.error) {
